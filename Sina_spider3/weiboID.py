@@ -1,4 +1,7 @@
-# encoding=utf-8
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+# @Date    : 2018/3/3 0003 22:30
+# @Author  : wangxian (908686161@qq.com)
 
 """ 初始的待爬队列 """
 weiboID = [

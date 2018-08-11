@@ -1,4 +1,8 @@
-# encoding=utf-8
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+# @Date    : 2018/3/3 0003 22:30
+# @Author  : wangxian (908686161@qq.com)
+
 
 # ------------------------------------------
 #   增加了向Mysql数据库中保存pipeline
@@ -7,12 +11,12 @@
 
 import pymongo
 from items import InformationItem, TweetsItem, RelationshipsItem
-import MySQLdb
+import pymysql
 
 class MysqlDBPipeline(object):
     def __init__(self):
         self.count = 1
-        self.conn = MySQLdb.connect(
+        self.conn = pymysql.connect(
                 host='localhost',
                 port=3306,
                 user='root',
@@ -158,11 +162,10 @@ class MysqlDBPipeline(object):
         return item
     
 
-
 class MongoDBPipeline(object):
     def __init__(self):
         clinet = pymongo.MongoClient("localhost", 27017)
-        db = clinet["SinaCs"]
+        db = clinet["SS"]
         self.Information = db["Information"]
         self.Tweets = db["Tweets"]
         self.Relationships = db["Relationships"]

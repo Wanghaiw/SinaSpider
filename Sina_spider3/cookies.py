@@ -1,21 +1,18 @@
-# encoding=utf-8
-# ------------------------------------------
-# ------------------------------------------
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+# @Date    : 2018/3/3 0003 22:30
+# @Author  : wangxian (908686161@qq.com)
 
-import base64
 import os
-import requests
 import json
 import logging
 import time
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-import sys
-reload(sys)
-sys.setdefaultencoding('utf-8')
 
 logger = logging.getLogger(__name__)
 dcap = dict(DesiredCapabilities.PHANTOMJS)  # PhantomJS需要使用老版手机的user-agent，不然验证码会无法通过
+
 dcap["phantomjs.page.settings.userAgent"] = (
     "Mozilla/5.0 (Linux; U; Android 2.3.6; en-us; Nexus S Build/GRK39F) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1"
 )
@@ -31,45 +28,10 @@ myWeiBo = [
 ]
 IDENTIFY = 1
 
-# def getCookie(account, password):
-#     """ 获取一个账号的Cookie """
-#     loginURL = "https://login.sina.com.cn/sso/login.php?client=ssologin.js(v1.4.15)"
-#     username = base64.b64encode(account.encode("utf-8")).decode("utf-8")
-#     postData = {
-#         "entry": "sso",
-#         "gateway": "1",
-#         "from": "null",
-#         "savestate": "30",
-#         "useticket": "0",
-#         "pagerefer": "",
-#         "vsnf": "1",
-#         "su": username,
-#         "service": "sso",
-#         "sp": password,
-#         "sr": "1440*900",
-#         "encoding": "UTF-8",
-#         "cdult": "3",
-#         "domain": "sina.com.cn",
-#         "prelt": "0",
-#         "returntype": "TEXT",
-#     }
-#     session = requests.Session()
-#     r = session.post(loginURL, data=postData)
-#     jsonStr = r.content.decode("gbk")
-#     info = json.loads(jsonStr)
-#     print info["retcode"]+'------------'
-#     if info["retcode"] == "0":
-#         logger.warning("Get Cookie Success!( Account:%s )" % account)
-#         cookie = session.cookies.get_dict()
-#         return json.dumps(cookie)
-#     else:
-#         logger.warning("Failed!( Reason:%s )" % info["reason"])
-#         return ""
-
 def getCookie(account, password):
     """ 获取一个账号的Cookie """
+    browser = webdriver.Chrome()#(desired_capabilities=dcap)
     try:
-        browser = webdriver.Chrome()#(desired_capabilities=dcap)
         browser.get("https://passport.weibo.cn/signin/login")
         time.sleep(1)
 
@@ -81,56 +43,39 @@ def getCookie(account, password):
         psd = browser.find_element_by_xpath('//*[@id="loginPassword"]')
         psd.clear()
         psd.send_keys(password)
-        # try:
-        #     code = browser.find_element_by_name("code")
-        #     code.clear()
-        #     if IDENTIFY == 1:
-        #         code_txt = raw_input("请查看路径下新生成的aa.png，然后输入验证码:")  # 手动输入验证码
-        #     else:
-        #         from PIL import Image
-        #         img = browser.find_element_by_xpath('//form[@method="post"]/div/img[@alt="请打开图片显示"]')
-        #         x = img.location["x"]
-        #         y = img.location["y"]
-        #         im = Image.open("aa.png")
-        #         im.crop((x, y, 100 + x, y + 22)).save("ab.png")  # 剪切出验证码
-        #         code_txt = identify()  # 验证码打码平台识别
-        #     code.send_keys(code_txt)
-        # except Exception, e:
-        #     pass
-        #browser.find_element_by_xpath('//*[@id="login_form_savestate"]').click()
         time.sleep(5)
         commit = browser.find_element_by_xpath('//*[@id="loginAction"]')
         commit.click()
         time.sleep(10)
 
         cookie = {}
-        print browser.title
+        print(browser.title)
         if "微博" in browser.title:
             for elem in browser.get_cookies():
                 cookie[elem["name"]] = elem["value"]
             logger.warning("Get Cookie Success!( Account:%s )" % account)
         return json.dumps(cookie)
-    except Exception, e:
+    except Exception as e:
         logger.warning("Failed %s!" % account)
+        print(e)
         return ""
     finally:
-        try:
-            browser.quit()
-        except Exception, e:
-            pass
+        browser.quit()
+
 
 
 def initCookie(rconn, spiderName):
     """ 获取所有账号的Cookies，存入Redis。如果Redis已有该账号的Cookie，则不再获取。 """
     for weibo in myWeiBo:
-        print weibo[0]
-        print rconn.get("%s:Cookies:%s--%s" % (spiderName, weibo[0], weibo[1]))
+        print(weibo[0],'=========')
+        print(rconn.get("%s:Cookies:%s--%s" % (spiderName, weibo[0], weibo[1])))  # 获取cookie的值
+        print(rconn.keys())
         if rconn.get("%s:Cookies:%s--%s" % (spiderName, weibo[0], weibo[1])) is None:  # 'SinaSpider:Cookies:账号--密码'，为None即不存在。
 
             cookie = getCookie(weibo[0], weibo[1])
             if len(cookie) > 0:
                 rconn.set("%s:Cookies:%s--%s" % (spiderName, weibo[0], weibo[1]), cookie)
-    cookieNum = "".join(rconn.keys()).count("SinaSpider:Cookies")
+    cookieNum = "".join([key.decode() for key in rconn.keys()]).count("SinaSpider:Cookies")
     logger.warning("The num of the cookies is %s" % cookieNum)
     if cookieNum == 0:
         logger.warning('Stopping...')

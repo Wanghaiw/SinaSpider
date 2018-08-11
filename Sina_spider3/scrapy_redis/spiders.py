@@ -1,7 +1,17 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
 from scrapy import Spider, signals
 from scrapy.exceptions import DontCloseSpider
 
 from . import connection
+
+'''
+设计的这个spider从redis中读取要爬的url,然后执行爬取，若爬取过程中返回更多的url，那么继续进行直至所有的request完成。之后继续从redis中读取url，循环这个过程。
+
+分析：在这个spider中通过connect signals.spider_idle信号实现对crawler状态的监视。当idle时，返回新的make_requests_from_url(url)给引擎，进而交给调度器调度。
+
+'''
 
 
 class RedisMixin(object):

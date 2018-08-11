@@ -1,3 +1,12 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+'''
+ 此扩展是对scrapy中自带的scheduler的替代（在settings的SCHEDULER变量中指出），正是利用此扩展实现crawler的分布式调度。
+ 其利用的数据结构来自于queue中实现的数据结构。
+ scrapy-redis所实现的两种分布式：爬虫分布式以及item处理分布式就是由模块scheduler和模块pipelines实现。上述其它模块作为为二者辅助的功能模块。
+'''
+
 from scrapy.utils.misc import load_object
 
 from . import connection

@@ -1,3 +1,12 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+'''
+这是是用来实现分布式处理的作用。它将Item存储在redis中以实现分布式处理。
+另外可以发现，同样是编写pipelines，在这里的编码实现不同于文章（链接：）中所分析的情况，由于在这里需要读取配置，所以就用到了from_crawler()函数。
+
+'''
+
 from scrapy.utils.serialize import ScrapyJSONEncoder
 from twisted.internet.threads import deferToThread
 

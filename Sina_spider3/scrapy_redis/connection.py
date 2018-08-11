@@ -1,6 +1,13 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+'''
+负责根据setting中配置实例化redis连接。被dupefilter和scheduler调用，总之涉及到redis存取的都要使用到这个模块。
+'''
+
+
 import redis
 
-# Default values.
+# Default values. 默认值
 REDIS_URL = None
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
@@ -16,7 +23,7 @@ def from_settings(settings):
     host = settings.get('REDIS_HOST', REDIS_HOST)
     port = settings.get('REDIS_PORT', REDIS_PORT)
 
-    # REDIS_URL takes precedence over host/port specification.
+    # REDIS_URL takes precedence over host/port specification.  REDIS_URL优先于host
     if url:
         return redis.from_url(url)
     else:

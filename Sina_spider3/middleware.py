@@ -1,13 +1,14 @@
-# encoding=utf-8
-# ------------------------------------------
-#   版本：3.0
-# ------------------------------------------
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+# @Date    : 2018/3/3 0003 22:30
+# @Author  : wangxian (908686161@qq.com)
 
 import os
 import random
 import redis
 import json
 import logging
+import requests
 from user_agents import agents
 from cookies import initCookie, updateCookie, removeCookie
 from scrapy.exceptions import IgnoreRequest
@@ -21,8 +22,23 @@ class UserAgentMiddleware(object):
     """ 换User-Agent """
 
     def process_request(self, request, spider):
+        print('正在设置UA头')
         agent = random.choice(agents)
         request.headers["User-Agent"] = agent
+
+
+class HttpProxyMiddleware(object):
+    """增加IP代理"""
+    def process_request(self,request,spider):
+        print('正在设置新的代理地址!!!')
+        while True:
+            try:
+                proxy = requests.get('http://127.0.0.1:9999').text
+            except Exception as e:
+                continue
+            else:
+                request.meta['proxy'] =proxy
+                break
 
 
 class CookiesMiddleware(RetryMiddleware):
@@ -41,10 +57,10 @@ class CookiesMiddleware(RetryMiddleware):
         redisKeys = self.rconn.keys()
         while len(redisKeys) > 0:
             elem = random.choice(redisKeys)
-            if "SinaSpider:Cookies" in elem:
+            if "SinaSpider:Cookies" in elem.decode():
                 cookie = json.loads(self.rconn.get(elem))
                 request.cookies = cookie
-                request.meta["accountText"] = elem.split("Cookies:")[-1]
+                request.meta["accountText"] = elem.decode().split("Cookies:")[-1]
                 break
             else:
                 redisKeys.remove(elem)
@@ -64,7 +80,7 @@ class CookiesMiddleware(RetryMiddleware):
                         "Redirect to 'http://weibo.cn/pub'!( Account:%s )" % request.meta["accountText"].split("--")[0])
                 reason = response_status_message(response.status)
                 return self._retry(request, reason, spider) or response  # 重试
-            except Exception, e:
+            except Exception as e:
                 raise IgnoreRequest
         elif response.status in [403, 414]:
             logger.error("%s! Stopping..." % response.status)

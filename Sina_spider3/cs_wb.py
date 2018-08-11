@@ -28,9 +28,47 @@
 # browser.quit()
 
 
-import redis
+# import redis
+#
+#
+# r = redis.Redis(host='localhost',port='6379',db=0)
+#
+# html = r.get('SinaSpider:dupefilter0')
+# print htm
 
+from selenium import webdriver
+import time
+import json
 
-r = redis.Redis(host='localhost',port='6379',db=0
-html = r.get('SinaSpider:dupefilter0')
-print htm
+browser = webdriver.Chrome()#(desired_capabilities=dcap)
+browser.get("https://passport.weibo.cn/signin/login")
+try:
+    time.sleep(2)
+
+    #browser.save_screenshot("aa.png")
+    username = browser.find_element_by_xpath('//*[@id="loginName"]')
+    username.clear()
+    username.send_keys('13548612815')
+    time.sleep(5)
+    psd = browser.find_element_by_xpath('//*[@id="loginPassword"]')
+    psd.clear()
+    psd.send_keys('whw199508157276')
+    time.sleep(5)
+    commit = browser.find_element_by_xpath('//*[@id="loginAction"]')
+    commit.click()
+    time.sleep(5)
+
+    cookie = {}
+    print(browser.title)
+    #print browser.get_cookies()
+    if "微博" in browser.title.decode('utf-8'):
+        for elem in browser.get_cookies():
+            cookie[elem["name"]] = elem["value"]
+        #logger.warning("Get Cookie Success!( Account:%s )" % account)
+    print(cookie)
+except Exception as e:
+    #logger.warning("Failed %s!" % account)
+    print(e)
+
+finally:
+    browser.quit()

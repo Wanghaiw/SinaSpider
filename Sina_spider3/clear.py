@@ -1,4 +1,8 @@
-# encoding=utf-8
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+# @Date    : 2018/3/3 0003 22:30
+# @Author  : wangxian (908686161@qq.com)
+
 # ------------------------------------------
 #   作用：清空Redis数据，重新跑数据时用。
 # ------------------------------------------
@@ -30,4 +34,4 @@ if __name__ == '__main__':
         if 'SinaSpider:dupefilter1' in rconn.keys():
             rconn.delete('SinaSpider:dupefilter1')
 
-    print 'Finish!'
+    print('Finish!')

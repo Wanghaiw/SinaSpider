@@ -1,3 +1,12 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+'''
+实现对request的存储，这里实现了三种方式的queue：
+FIFO的SpiderQueue，SpiderPriorityQueue，以及LIFI的SpiderStack。默认使用的是第二中
+'''
+
+
 from scrapy.utils.reqser import request_to_dict, request_from_dict
 from scrapy.http import Request
 
@@ -8,14 +17,14 @@ except ImportError:
 
 
 class Base(object):
-    """Per-spider queue/stack base class"""
+    """Per-spider queue/stack base class 队列的基类"""
 
     def __init__(self, server, spider, key, queue_name):
-        """Initialize per-spider redis queue.
+        """Initialize per-spider redis queue.  初始化redis的队列
 
-        Parameters:
-            server -- redis connection
-            spider -- spider instance
+        Parameters:参数
+            server -- redis connection  redis的实例
+            spider -- spider instance   爬虫实例
             key -- key for this queue (e.g. "%(spider)s:queue")
         """
         self.server = server
@@ -23,39 +32,39 @@ class Base(object):
         self.key = key % {'spider': queue_name}
 
     def _encode_request(self, request):
-        """Encode a request object"""
+        """Encode a request object"""  #序列化request
         return pickle.dumps(request_to_dict(request, self.spider), protocol=-1)
 
     def _decode_request(self, encoded_request):
-        """Decode an request previously encoded"""
+        """Decode an request previously encoded"""  #反序列化request
         return request_from_dict(pickle.loads(encoded_request), self.spider)
 
     def __len__(self):
-        """Return the length of the queue"""
+        """Return the length of the queue"""  #返回队列的长度
         raise NotImplementedError
 
     def push(self, request):
-        """Push a request"""
+        """Push a request"""  #存一个请求
         raise NotImplementedError
 
     def pop(self, timeout=0):
-        """Pop a request"""
+        """Pop a request"""   #弹出一个请求
         raise NotImplementedError
 
     def clear(self):
-        """Clear queue/stack"""
+        """Clear queue/stack"""  #清楚队列
         self.server.delete(self.key)
 
 
 class SpiderQueue(Base):
-    """Per-spider FIFO queue"""
+    """Per-spider FIFO queue"""  #先进先出
 
     def __len__(self):
         """Return the length of the queue"""
         return self.server.llen(self.key)
 
     def push(self, request):
-        """Push a request"""
+        """Push a request"""  #push
         self.server.lpush(self.key, self._encode_request(request))
 
     def pop(self, timeout=0):
@@ -71,7 +80,7 @@ class SpiderQueue(Base):
 
 
 class SpiderPriorityQueue(Base):
-    """Per-spider priority queue abstraction using redis' sorted set"""
+    """Per-spider priority queue abstraction using redis' sorted set"""  #用redis的排序来决定哪个先出
 
     def __len__(self):
         """Return the length of the queue"""
@@ -106,7 +115,11 @@ class SpiderSimpleQueue(Base):
 
     def push(self, request):
         """Push a request"""
-        self.server.lpush(self.key, request.url[15:])
+        # if 'info' not in request.url:
+        #     self.server.lpush(self.key, request.url[16:])
+        # else:
+        self.server.lpush(self.key, request.url)
+
 
     def pop(self, timeout=0):
         """Pop a request"""
@@ -116,23 +129,24 @@ class SpiderSimpleQueue(Base):
                 url = url[1]
         else:
             url = self.server.rpop(self.key)
-        print 'queue_url:',url
+        print('queue_url:',url)
         if url:
+            url = url.decode()
             try:
                 if "/follow" in url or "/fans" in url:
-                    cb = getattr(self.spider, "parse_relationship")
+                    cb = getattr(self.spider, "parse_relationship")  #返回这个方法
+                    #base_url = 'https://weibo.c'
                 elif "/profile" in url:
                     cb = getattr(self.spider, "parse_tweets")
+                    #base_url = 'https://weibo.c'
                 elif "/info" in url:
+                    #base_url = 'https://weibo.c'
                     cb = getattr(self.spider, "parse_information")
                 else:
                     raise ValueError("Method not found in: %s( URL:%s )" % (self.spider, url))
-                
-                if 'info' in url:
-                    base_url = 'https://weibo.c'
-                elif 'follow' or 'fans' in url:
-                    base_url = 'https://weibo.c'
-                return Request(url="{}{}".format(base_url,url), callback=cb)
+
+
+                return Request(url="{}".format(url), callback=cb)
             except AttributeError:
                 raise ValueError("Method not found in: %s( URL:%s )" % (self.spider, url))
 
@@ -162,3 +176,4 @@ class SpiderStack(Base):
 
 
 __all__ = ['SpiderQueue', 'SpiderPriorityQueue', 'SpiderSimpleQueue', 'SpiderStack']
+
